@@ -15,12 +15,6 @@ pipeline {
                 checkout scm
             }
         }
-
-        stage('Test') {
-            steps {
-                sh 'mvn clean test'
-            }
-        }
 stage('Check Java Environment') {
     steps {
         sh '''
@@ -38,6 +32,29 @@ stage('Check Java Environment') {
         '''
     }
 }
+stage('Check Java Environment') {
+    steps {
+        sh '''
+            echo "===== JAVA VERSION ====="
+            java -version
+
+            echo "===== JAVAC VERSION ====="
+            javac -version
+
+            echo "===== MAVEN VERSION ====="
+            mvn -version
+
+            echo "===== JAVA HOME ====="
+            echo $JAVA_HOME
+        '''
+    }
+}
+        stage('Test') {
+            steps {
+                sh 'mvn clean test'
+            }
+        }
+
         stage('Build') {
             steps {
                 sh 'mvn clean package -DskipTests'
