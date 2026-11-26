@@ -6,7 +6,7 @@ pipeline {
         DOCKER_IMAGE = 'avah777/aws-jenkins-kubernetes'
         K8S_NAMESPACE = 'devops-demo'
         K8S_DEPLOYMENT = 'aws-java-app'
-        EKS_CLUSTER = 'devops-platform-eks'
+        EKS_CLUSTER = 'devops-demo'
         AWS_DEFAULT_REGION = 'us-east-1'
     }
 
