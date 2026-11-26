@@ -1,3 +1,4 @@
+
 pipeline {
     agent any
 
@@ -5,7 +6,8 @@ pipeline {
         DOCKER_IMAGE = 'avah777/aws-jenkins-kubernetes'
         K8S_NAMESPACE = 'devops-demo'
         K8S_DEPLOYMENT = 'aws-java-app'
-	EKS_CLUSTER = 'devops-cluster'
+        EKS_CLUSTER = 'devops-platform-eks'
+        AWS_DEFAULT_REGION = 'us-east-1'
     }
 
     stages {
@@ -15,49 +17,28 @@ pipeline {
                 checkout scm
             }
         }
-stage('Check Java Environment') {
-    steps {
-        sh '''
-            echo "===== JAVA VERSION ====="
-            java -version
 
-            echo "===== JAVAC VERSION ====="
-            javac -version
-
-            echo "===== MAVEN VERSION ====="
-            mvn -version
-
-            echo "===== JAVA HOME ====="
-            echo $JAVA_HOME
-        '''
-    }
-}
-stage('Check Java Environment') {
-    steps {
-        sh '''
-            echo "===== JAVA VERSION ====="
-            java -version
-
-            echo "===== JAVAC VERSION ====="
-            javac -version
-
-            echo "===== MAVEN VERSION ====="
-            mvn -version
-
-            echo "===== JAVA HOME ====="
-            echo $JAVA_HOME
-        '''
-    }
-}
-        stage('Test') {
+        stage('Check Java Environment') {
             steps {
-                sh 'mvn clean test'
+                sh '''
+                    echo "===== JAVA VERSION ====="
+                    java -version
+
+                    echo "===== JAVAC VERSION ====="
+                    javac -version
+
+                    echo "===== MAVEN VERSION ====="
+                    mvn -version
+
+                    echo "===== JAVA HOME ====="
+                    echo "$JAVA_HOME"
+                '''
             }
         }
 
-        stage('Build') {
+        stage('Build and Test') {
             steps {
-                sh 'mvn clean package -DskipTests'
+                sh 'mvn clean verify'
             }
         }
 
@@ -70,11 +51,11 @@ stage('Check Java Environment') {
                     echo "===== PROJECT FILES ====="
                     ls -la
 
-                    echo "===== TARGET ====="
-                    ls -la target/ || true
+                    echo "===== TARGET DIRECTORY ====="
+                    ls -la target/
 
                     echo "===== DOCKERFILE ====="
-                    ls -la Dockerfile || true
+                    ls -la Dockerfile
                 '''
             }
         }
@@ -122,9 +103,19 @@ stage('Check Java Environment') {
                         credentialsId: 'kubeconfig'
                     ]) {
                         sh """
-                            kubectl set image deployment/${K8S_DEPLOYMENT} \
+                            echo "Checking EKS cluster..."
+                            aws eks describe-cluster \
+                            --name ${EKS_CLUSTER} \
+                            --region ${AWS_DEFAULT_REGION}
+
+                            echo "Updating Kubernetes deployment..."
+
+                            kubectl set image \
+                            deployment/${K8S_DEPLOYMENT} \
                             ${K8S_DEPLOYMENT}=${DOCKER_IMAGE}:${BUILD_NUMBER} \
                             -n ${K8S_NAMESPACE}
+
+                            echo "Checking deployment rollout..."
 
                             kubectl rollout status \
                             deployment/${K8S_DEPLOYMENT} \
